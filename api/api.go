@@ -809,6 +809,20 @@ func (api *Server) GetEvmTransfersByBlockHeight(ctx context.Context, in *iotexap
 	return &iotexapi.GetEvmTransfersByBlockHeightResponse{BlockEvmTransfers: transfers}, nil
 }
 
+// GetSystemLogByActionHash returns system log by action hash
+func (api *Server) GetSystemLogByActionHash(
+	ctx context.Context,
+	in *iotexapi.GetSystemLogByActionHashRequest) (*iotexapi.GetSystemLogByActionHashResponse, error) {
+	return nil, nil
+}
+
+// GetSystemLogByBlockHeight returns system log by block height
+func (api *Server) GetSystemLogByBlockHeight(
+	ctx context.Context,
+	in *iotexapi.GetSystemLogByBlockHeightRequest) (*iotexapi.GetSystemLogByBlockHeightResponse, error) {
+	return nil, nil
+}
+
 // Start starts the API server
 func (api *Server) Start() error {
 	portStr := ":" + strconv.Itoa(api.cfg.API.Port)
