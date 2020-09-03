@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/facebookgo/clock"
-	fsm "github.com/iotexproject/go-fsm"
+	"github.com/iotexproject/go-fsm"
 	"github.com/iotexproject/go-pkgs/crypto"
 	"github.com/iotexproject/iotex-address/address"
 	"github.com/pkg/errors"
@@ -82,6 +82,9 @@ type rollDPoSCtx struct {
 	eManagerDB        db.KVStore
 	toleratedOvertime time.Duration
 
+	// the last endorsed block height
+	// TODO: update lastEndorse after sync
+	lastEndorse uint64
 	encodedAddr string
 	priKey      crypto.PrivateKey
 	round       *roundCtx
@@ -149,6 +152,7 @@ func newRollDPoSCtx(
 		roundCalc:         roundCalc,
 		eManagerDB:        eManagerDB,
 		toleratedOvertime: toleratedOvertime,
+		lastEndorse:       chain.TipHeight(),
 	}, nil
 }
 
@@ -258,9 +262,9 @@ func (ctx *rollDPoSCtx) RoundCalc() *roundCalculator {
 	return ctx.roundCalc
 }
 
-/////////////////////////////////////
+// ///////////////////////////////////
 // Context of consensusFSM interfaces
-/////////////////////////////////////
+// ///////////////////////////////////
 
 func (ctx *rollDPoSCtx) NewConsensusEvent(
 	eventType fsm.EventType,
@@ -578,9 +582,9 @@ func (ctx *rollDPoSCtx) Active() bool {
 	return ctx.active
 }
 
-///////////////////////////////////////////
+// /////////////////////////////////////////
 // private functions
-///////////////////////////////////////////
+// /////////////////////////////////////////
 
 func (ctx *rollDPoSCtx) mintNewBlock() (*EndorsedConsensusMessage, error) {
 	blk, err := ctx.chain.MintNewBlock(ctx.round.StartTime())
@@ -603,10 +607,15 @@ func (ctx *rollDPoSCtx) isDelegate() bool {
 }
 
 func (ctx *rollDPoSCtx) endorseBlockProposal(proposal *blockProposal) (*EndorsedConsensusMessage, error) {
+	if ctx.round.Height() != ctx.lastEndorse+1 {
+		// TODO: calibrate something
+		return nil, errors.Errorf("already endorsed in this round")
+	}
 	en, err := endorsement.Endorse(ctx.priKey, proposal, ctx.round.StartTime())
 	if err != nil {
 		return nil, err
 	}
+	ctx.lastEndorse = proposal.block.Height()
 	return NewEndorsedConsensusMessage(proposal.block.Height(), proposal, en), nil
 }
 
